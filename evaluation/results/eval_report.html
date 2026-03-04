@@ -1,0 +1,782 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NCCN RAG System — Evaluation Report</title>
+  <style>
+    :root {
+      --bg:       #0f1117;
+      --card:     #1a1d27;
+      --border:   #2a2d3e;
+      --text:     #e2e8f0;
+      --muted:    #8892a4;
+      --accent:   #5b8dee;
+      --green:    #2a9d5c;
+      --yellow:   #f4a261;
+      --red:      #e05c5c;
+      --font:     'Inter', 'Segoe UI', sans-serif;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--bg); color: var(--text); font-family: var(--font); font-size: 14px; padding: 40px 24px; }
+    a { color: var(--accent); }
+
+    /* ── Header ── */
+    .header { max-width: 1100px; margin: 0 auto 40px; }
+    .header h1 { font-size: 1.7rem; font-weight: 700; color: #fff; margin-bottom: 6px; }
+    .header p  { color: var(--muted); font-size: 0.92rem; max-width: 700px; line-height: 1.6; }
+    .meta { display:flex; gap: 24px; margin-top: 16px; flex-wrap: wrap; }
+    .meta span { background: var(--card); border: 1px solid var(--border); border-radius: 6px;
+                  padding: 4px 12px; font-size: 0.78rem; color: var(--muted); }
+    .meta strong { color: var(--text); }
+
+    /* ── Section ── */
+    section { max-width: 1100px; margin: 0 auto 48px; }
+    section h2 { font-size: 1.15rem; font-weight: 600; color: #fff; margin-bottom: 16px;
+                  padding-bottom: 10px; border-bottom: 1px solid var(--border); }
+    section h3 { font-size: 0.95rem; font-weight: 600; color: var(--muted); margin: 24px 0 12px; }
+
+    /* ── KPI Cards ── */
+    .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 16px; margin-bottom: 32px; }
+    .kpi { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 20px 16px; text-align: center; }
+    .kpi .label { font-size: 0.72rem; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; margin-bottom: 10px; }
+    .kpi .values { display: flex; justify-content: center; gap: 16px; align-items: flex-end; }
+    .kpi .val { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+    .kpi .val .num { font-size: 1.35rem; font-weight: 700; color: #fff; }
+    .kpi .val .sub { font-size: 0.65rem; color: var(--muted); }
+    .kpi .delta { font-size: 0.78rem; font-weight: 600; margin-top: 8px; }
+
+    /* ── Tables ── */
+    .table-wrap { overflow-x: auto; border-radius: 10px; border: 1px solid var(--border); }
+    table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+    thead th { background: #13161f; color: var(--muted); font-size: 0.72rem; text-transform: uppercase;
+                letter-spacing: .04em; padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--border); }
+    thead th.num { text-align: right; }
+    tbody tr { border-bottom: 1px solid var(--border); transition: background .15s; }
+    tbody tr:last-child { border-bottom: none; }
+    tbody tr:hover { background: rgba(91,141,238,.06); }
+    tbody td { padding: 10px 14px; vertical-align: middle; }
+    tbody td.num { text-align: right; font-variant-numeric: tabular-nums; }
+    tbody td.delta { text-align: right; }
+
+    .badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.68rem;
+              font-weight: 600; color: #fff; text-transform: uppercase; letter-spacing: .04em; }
+    .highlight-row td { background: rgba(91,141,238,.05); }
+
+    /* ── Summary table ── */
+    .summary-table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+    .summary-table thead th { background: #13161f; color: var(--muted); font-size: 0.72rem;
+                                text-transform: uppercase; letter-spacing:.04em; padding: 10px 16px;
+                                border-bottom: 1px solid var(--border); text-align:right; }
+    .summary-table thead th:first-child { text-align: left; }
+    .summary-table tbody tr { border-bottom: 1px solid var(--border); }
+    .summary-table tbody td { padding: 11px 16px; text-align:right; }
+    .summary-table tbody td:first-child { text-align:left; color: var(--text); font-weight:500; }
+    .summary-table .section-header td { background: #13161f; color: var(--accent); font-size: 0.72rem;
+                                          text-transform: uppercase; letter-spacing:.06em; padding: 8px 16px;
+                                          font-weight:600; text-align:left !important; }
+
+    /* ── Methodology box ── */
+    .method-box { background: var(--card); border: 1px solid var(--border); border-radius: 10px;
+                   padding: 24px; font-size: 0.85rem; line-height: 1.7; color: var(--muted); }
+    .method-box h4 { color: var(--text); margin-bottom: 8px; font-size: 0.9rem; }
+    .method-box ul { padding-left: 20px; margin-top: 8px; }
+    .method-box li { margin-bottom: 6px; }
+    .method-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    @media (max-width: 640px) { .method-grid { grid-template-columns: 1fr; } }
+
+    /* ── Footer ── */
+    footer { max-width: 1100px; margin: 40px auto 0; padding-top: 24px; border-top: 1px solid var(--border);
+              color: var(--muted); font-size: 0.78rem; display:flex; justify-content:space-between; flex-wrap:wrap; gap:8px; }
+  </style>
+</head>
+<body>
+
+<!-- ── HEADER ─────────────────────────────────────────────────── -->
+<div class="header">
+  <h1>🏥 NCCN Medical RAG — Evaluation Report</h1>
+  <p>Comparative evaluation of the multi-agent pipeline with and without the Verifier Agent,
+     measured across 20 NCCN-based questions covering BCC diagnosis, treatment, systemic therapy,
+     follow-up, and cross-cancer comparison.</p>
+  <div class="meta">
+    <span>📋 <strong>20</strong> questions</span>
+    <span>🔬 <strong>2</strong> variants tested</span>
+    <span>📄 Source: <strong>NCCN Guidelines — Basal Cell Skin Cancer</strong></span>
+    <span>🤖 LLM: <strong>Groq llama-3.1-8b-instant</strong></span>
+    <span>📦 Embeddings: <strong>all-MiniLM-L6-v2</strong></span>
+    <span>🔗 Pipeline: <strong>LangGraph 9-node</strong></span>
+  </div>
+</div>
+
+
+<!-- ── KPI CARDS ──────────────────────────────────────────────── -->
+<section>
+  <h2>Key Metrics at a Glance</h2>
+  <div class="kpi-grid">
+
+    <div class="kpi">
+      <div class="label">Citation Accuracy</div>
+      <div class="values">
+        <div class="val"><div class="num">81.4%</div><div class="sub">without</div></div>
+        <div class="val"><div class="num" style="color:#5b8dee">81.4%</div><div class="sub">with</div></div>
+      </div>
+      <div class="delta"><span style="color:#888;font-weight:600">±0.0%</span></div>
+    </div>
+
+    <div class="kpi">
+      <div class="label">Concept Hit Rate</div>
+      <div class="values">
+        <div class="val"><div class="num">69.4%</div><div class="sub">without</div></div>
+        <div class="val"><div class="num" style="color:#5b8dee">73.1%</div><div class="sub">with</div></div>
+      </div>
+      <div class="delta"><span style="color:#2a9d5c;font-weight:600">+3.7%</span></div>
+    </div>
+
+    <div class="kpi">
+      <div class="label">Unsupported Claim Rate</div>
+      <div class="values">
+        <div class="val"><div class="num">18.3%</div><div class="sub">without</div></div>
+        <div class="val"><div class="num" style="color:#5b8dee">6.1%</div><div class="sub">with</div></div>
+      </div>
+      <div class="delta"><span style="color:#2a9d5c;font-weight:600">+-12.2%</span></div>
+    </div>
+
+    <div class="kpi">
+      <div class="label">Regeneration Rate</div>
+      <div class="values">
+        <div class="val"><div class="num">35.0%</div><div class="sub">without</div></div>
+        <div class="val"><div class="num" style="color:#5b8dee">35.0%</div><div class="sub">with</div></div>
+      </div>
+      <div class="delta"><span style="color:#888;font-weight:600">±0.0%</span></div>
+    </div>
+
+    <div class="kpi">
+      <div class="label">Avg Latency</div>
+      <div class="values">
+        <div class="val"><div class="num">10.8s</div><div class="sub">without</div></div>
+        <div class="val"><div class="num" style="color:#5b8dee">14.2s</div><div class="sub">with</div></div>
+      </div>
+      <div class="delta"><span style="color:#e05c5c;font-weight:600">340.0%</span></div>
+    </div>
+
+    <div class="kpi">
+      <div class="label">Avg Valid Claims</div>
+      <div class="values">
+        <div class="val"><div class="num">3.9</div><div class="sub">of 4.8</div></div>
+        <div class="val"><div class="num" style="color:#5b8dee">3.9</div><div class="sub">of 4.8</div></div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+
+<!-- ── MAIN COMPARISON TABLE ──────────────────────────────────── -->
+<section>
+  <h2>Full Comparison Table — With vs Without Verifier</h2>
+  <div class="table-wrap">
+    <table class="summary-table">
+      <thead>
+        <tr>
+          <th style="text-align:left;min-width:200px">Metric</th>
+          <th>Without Verifier</th>
+          <th>With Verifier</th>
+          <th>Delta</th>
+          <th style="text-align:left;color:#5b8dee;min-width:200px">Interpretation</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr class="section-header"><td colspan="5">📊 ANSWER QUALITY</td></tr>
+        <tr>
+          <td>Citation Accuracy</td>
+          <td>81.4%</td>
+          <td>81.4%</td>
+          <td><span style="color:#888;font-weight:600">±0.0%</span></td>
+          <td style="text-align:left;font-size:0.78rem;color:#8892a4">Ratio of claims with verified source page</td>
+        </tr>
+        <tr>
+          <td>Concept Hit Rate</td>
+          <td>69.4%</td>
+          <td>73.1%</td>
+          <td><span style="color:#2a9d5c;font-weight:600">+3.7%</span></td>
+          <td style="text-align:left;font-size:0.78rem;color:#8892a4">% of expected clinical concepts present in answer</td>
+        </tr>
+        <tr class="highlight-row">
+          <td><strong>Unsupported Claim Rate</strong></td>
+          <td>18.3%</td>
+          <td>6.1%</td>
+          <td><span style="color:#2a9d5c;font-weight:600">+-12.2%</span></td>
+          <td style="text-align:left;font-size:0.78rem;color:#8892a4"><strong>Claims not traceable to NCCN source — lower is better</strong></td>
+        </tr>
+        <tr class="section-header"><td colspan="5">⚙️ PIPELINE BEHAVIOUR</td></tr>
+        <tr>
+          <td>Regeneration Rate</td>
+          <td>35.0%</td>
+          <td>35.0%</td>
+          <td><span style="color:#888;font-weight:600">±0.0%</span></td>
+          <td style="text-align:left;font-size:0.78rem;color:#8892a4">Questions triggering ≥1 citation re-run</td>
+        </tr>
+        <tr>
+          <td>Questions with Regeneration</td>
+          <td>7 / 20</td>
+          <td>7 / 20</td>
+          <td>—</td>
+          <td style="text-align:left;font-size:0.78rem;color:#8892a4">Absolute count</td>
+        </tr>
+        <tr>
+          <td>Avg Regenerations / Question</td>
+          <td>0.35</td>
+          <td>0.35</td>
+          <td>—</td>
+          <td style="text-align:left;font-size:0.78rem;color:#8892a4">Mean retries for failed citation validation</td>
+        </tr>
+        <tr class="section-header"><td colspan="5">📐 RESPONSE CHARACTERISTICS</td></tr>
+        <tr>
+          <td>Avg Claims / Question</td>
+          <td>4.8</td>
+          <td>4.8</td>
+          <td>—</td>
+          <td style="text-align:left;font-size:0.78rem;color:#8892a4">Structured claims extracted by agents</td>
+        </tr>
+        <tr>
+          <td>Avg Valid Claims</td>
+          <td>3.9</td>
+          <td>3.9</td>
+          <td>—</td>
+          <td style="text-align:left;font-size:0.78rem;color:#8892a4">Claims passing citation validation</td>
+        </tr>
+        <tr>
+          <td>Avg Answer Length (chars)</td>
+          <td>2340</td>
+          <td>2180</td>
+          <td>—</td>
+          <td style="text-align:left;font-size:0.78rem;color:#8892a4">Verifier removes unsupported text → shorter</td>
+        </tr>
+        <tr>
+          <td>Avg Latency</td>
+          <td>10.8 s</td>
+          <td>14.2 s</td>
+          <td><span style="color:#e05c5c;font-weight:600">340.0%</span></td>
+          <td style="text-align:left;font-size:0.78rem;color:#8892a4">Verifier adds one extra LLM call</td>
+        </tr>
+        <tr>
+          <td>Errors</td>
+          <td>0</td>
+          <td>0</td>
+          <td>—</td>
+          <td style="text-align:left;font-size:0.78rem;color:#8892a4">Pipeline exceptions</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+
+<!-- ── BY CATEGORY ────────────────────────────────────────────── -->
+<section>
+  <h2>Results by Question Category</h2>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Category</th>
+          <th class="num">N</th>
+          <th class="num">Cit Acc (no verif)</th>
+          <th class="num">Cit Acc (with verif)</th>
+          <th class="num">Δ Cit</th>
+          <th class="num">Unsup (no verif)</th>
+          <th class="num">Unsup (with verif)</th>
+          <th class="num">Δ Unsup</th>
+          <th class="num">Concept (no verif)</th>
+          <th class="num">Concept (with verif)</th>
+          <th class="num">Δ Concept</th>
+        </tr>
+      </thead>
+      <tbody>
+        
+        <tr>
+          <td><strong>DIAGNOSIS</strong></td>
+          <td>5</td>
+          <td class="num">83.2%</td>
+          <td class="num">83.2%</td>
+          <td class="num delta"><span style="color:#888;font-weight:600">±0.0%</span></td>
+          <td class="num">21.0%</td>
+          <td class="num">4.0%</td>
+          <td class="num delta"><span style="color:#2a9d5c;font-weight:600">+-17.0%</span></td>
+          <td class="num">67.8%</td>
+          <td class="num">79.2%</td>
+          <td class="num delta"><span style="color:#2a9d5c;font-weight:600">+11.4%</span></td>
+        </tr>
+        <tr>
+          <td><strong>TREATMENT</strong></td>
+          <td>9</td>
+          <td class="num">80.9%</td>
+          <td class="num">80.9%</td>
+          <td class="num delta"><span style="color:#888;font-weight:600">±0.0%</span></td>
+          <td class="num">19.9%</td>
+          <td class="num">4.9%</td>
+          <td class="num delta"><span style="color:#2a9d5c;font-weight:600">+-15.0%</span></td>
+          <td class="num">62.8%</td>
+          <td class="num">71.9%</td>
+          <td class="num delta"><span style="color:#2a9d5c;font-weight:600">+9.1%</span></td>
+        </tr>
+        <tr>
+          <td><strong>SYSTEMIC</strong></td>
+          <td>3</td>
+          <td class="num">78.3%</td>
+          <td class="num">78.3%</td>
+          <td class="num delta"><span style="color:#888;font-weight:600">±0.0%</span></td>
+          <td class="num">21.7%</td>
+          <td class="num">11.0%</td>
+          <td class="num delta"><span style="color:#2a9d5c;font-weight:600">+-10.7%</span></td>
+          <td class="num">59.0%</td>
+          <td class="num">72.3%</td>
+          <td class="num delta"><span style="color:#2a9d5c;font-weight:600">+13.3%</span></td>
+        </tr>
+        <tr>
+          <td><strong>FOLLOW_UP</strong></td>
+          <td>2</td>
+          <td class="num">85.5%</td>
+          <td class="num">85.5%</td>
+          <td class="num delta"><span style="color:#888;font-weight:600">±0.0%</span></td>
+          <td class="num">15.0%</td>
+          <td class="num">0.0%</td>
+          <td class="num delta"><span style="color:#2a9d5c;font-weight:600">+-15.0%</span></td>
+          <td class="num">75.5%</td>
+          <td class="num">75.5%</td>
+          <td class="num delta"><span style="color:#888;font-weight:600">±0.0%</span></td>
+        </tr>
+        <tr>
+          <td><strong>COMPARISON</strong></td>
+          <td>1</td>
+          <td class="num">80.0%</td>
+          <td class="num">80.0%</td>
+          <td class="num delta"><span style="color:#888;font-weight:600">±0.0%</span></td>
+          <td class="num">20.0%</td>
+          <td class="num">10.0%</td>
+          <td class="num delta"><span style="color:#2a9d5c;font-weight:600">+-10.0%</span></td>
+          <td class="num">40.0%</td>
+          <td class="num">60.0%</td>
+          <td class="num delta"><span style="color:#2a9d5c;font-weight:600">+20.0%</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+
+<!-- ── VERIFIER CONFIDENCE ────────────────────────────────────── -->
+<section>
+  <h2>Verifier Confidence Distribution</h2>
+  <div style="display:flex;gap:24px;flex-wrap:wrap;align-items:flex-start">
+    <div class="table-wrap" style="flex:0 0 340px">
+      <table>
+        <thead><tr><th>Confidence</th><th class="num">Without Verifier</th><th class="num">With Verifier</th></tr></thead>
+        <tbody>
+        <tr>
+          <td><span class="badge" style="background:#2a9d5c">HIGH</span></td>
+          <td class="num">0</td>
+          <td class="num">11</td>
+        </tr>
+        <tr>
+          <td><span class="badge" style="background:#f4a261">MEDIUM</span></td>
+          <td class="num">0</td>
+          <td class="num">7</td>
+        </tr>
+        <tr>
+          <td><span class="badge" style="background:#e05c5c">LOW</span></td>
+          <td class="num">0</td>
+          <td class="num">2</td>
+        </tr>
+        <tr>
+          <td><span class="badge" style="background:#888">UNKNOWN</span></td>
+          <td class="num">0</td>
+          <td class="num">0</td>
+        </tr>
+        <tr>
+          <td><span class="badge" style="background:#aaa">SKIPPED</span></td>
+          <td class="num">20</td>
+          <td class="num">0</td>
+        </tr></tbody>
+      </table>
+    </div>
+    <div style="flex:1;min-width:240px;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:20px;font-size:0.83rem;color:var(--muted);line-height:1.8">
+      <strong style="color:var(--text)">What this means:</strong><br><br>
+      <span style="color:#2a9d5c">■ HIGH</span> — All claims traced to NCCN source with matching quote<br>
+      <span style="color:#f4a261">■ MEDIUM</span> — Most claims supported; minor inferences present<br>
+      <span style="color:#e05c5c">■ LOW</span> — Significant unsupported content flagged<br>
+      <span style="color:#888">■ UNKNOWN</span> — Verifier could not parse response<br>
+      <span style="color:#aaa">■ SKIPPED</span> — Verifier bypassed (without-verifier variant)<br>
+    </div>
+  </div>
+</section>
+
+
+<!-- ── PER-QUESTION TABLE ─────────────────────────────────────── -->
+<section>
+  <h2>Per-Question Breakdown (All 20 Questions)</h2>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th class="num">#</th>
+          <th>Question</th>
+          <th>Diff</th>
+          <th>Category</th>
+          <th class="num">Cit% (−V)</th>
+          <th class="num">Cit% (+V)</th>
+          <th class="num">Unsup (−V)</th>
+          <th class="num">Unsup (+V)</th>
+          <th class="num">Concept (−V)</th>
+          <th class="num">Concept (+V)</th>
+          <th class="num">Regen</th>
+          <th>Conf</th>
+        </tr>
+      </thead>
+      <tbody>
+        
+        <tr>
+          <td class="num">1</td>
+          <td style="font-size:0.75rem">Signs and symptoms of BCC…</td>
+          <td><span class="badge" style="background:#2a9d5c">easy</span></td>
+          <td style="font-size:0.72rem;color:#999">DIAGNOSIS</td>
+          <td class="num">90.0%</td>
+          <td class="num">90.0%</td>
+          <td class="num">20.0%</td>
+          <td class="num">0.0%</td>
+          <td class="num">75.0%</td>
+          <td class="num">88.0%</td>
+          <td class="num">0</td>
+          <td><span class="badge" style="background:#2a9d5c;font-size:0.65rem">HIGH</span></td>
+        </tr>
+        <tr>
+          <td class="num">2</td>
+          <td style="font-size:0.75rem">Risk factors for BCC…</td>
+          <td><span class="badge" style="background:#2a9d5c">easy</span></td>
+          <td style="font-size:0.72rem;color:#999">DIAGNOSIS</td>
+          <td class="num">83.0%</td>
+          <td class="num">83.0%</td>
+          <td class="num">17.0%</td>
+          <td class="num">0.0%</td>
+          <td class="num">71.0%</td>
+          <td class="num">86.0%</td>
+          <td class="num">0</td>
+          <td><span class="badge" style="background:#2a9d5c;font-size:0.65rem">HIGH</span></td>
+        </tr>
+        <tr>
+          <td class="num">3</td>
+          <td style="font-size:0.75rem">NCCN risk classification of BCC…</td>
+          <td><span class="badge" style="background:#f4a261">medium</span></td>
+          <td style="font-size:0.72rem;color:#999">DIAGNOSIS</td>
+          <td class="num">80.0%</td>
+          <td class="num">80.0%</td>
+          <td class="num">30.0%</td>
+          <td class="num">10.0%</td>
+          <td class="num">63.0%</td>
+          <td class="num">75.0%</td>
+          <td class="num">1</td>
+          <td><span class="badge" style="background:#f4a261;font-size:0.65rem">MEDIUM</span></td>
+        </tr>
+        <tr>
+          <td class="num">4</td>
+          <td style="font-size:0.75rem">High-risk vs low-risk BCC features…</td>
+          <td><span class="badge" style="background:#f4a261">medium</span></td>
+          <td style="font-size:0.72rem;color:#999">DIAGNOSIS</td>
+          <td class="num">75.0%</td>
+          <td class="num">75.0%</td>
+          <td class="num">25.0%</td>
+          <td class="num">10.0%</td>
+          <td class="num">50.0%</td>
+          <td class="num">67.0%</td>
+          <td class="num">0</td>
+          <td><span class="badge" style="background:#f4a261;font-size:0.65rem">MEDIUM</span></td>
+        </tr>
+        <tr>
+          <td class="num">5</td>
+          <td style="font-size:0.75rem">Diagnostic workup for BCC…</td>
+          <td><span class="badge" style="background:#2a9d5c">easy</span></td>
+          <td style="font-size:0.72rem;color:#999">DIAGNOSIS</td>
+          <td class="num">88.0%</td>
+          <td class="num">88.0%</td>
+          <td class="num">13.0%</td>
+          <td class="num">0.0%</td>
+          <td class="num">80.0%</td>
+          <td class="num">80.0%</td>
+          <td class="num">0</td>
+          <td><span class="badge" style="background:#2a9d5c;font-size:0.65rem">HIGH</span></td>
+        </tr>
+        <tr>
+          <td class="num">6</td>
+          <td style="font-size:0.75rem">Surgical options for low-risk BCC…</td>
+          <td><span class="badge" style="background:#2a9d5c">easy</span></td>
+          <td style="font-size:0.72rem;color:#999">TREATMENT</td>
+          <td class="num">86.0%</td>
+          <td class="num">86.0%</td>
+          <td class="num">14.0%</td>
+          <td class="num">0.0%</td>
+          <td class="num">83.0%</td>
+          <td class="num">83.0%</td>
+          <td class="num">0</td>
+          <td><span class="badge" style="background:#2a9d5c;font-size:0.65rem">HIGH</span></td>
+        </tr>
+        <tr>
+          <td class="num">7</td>
+          <td style="font-size:0.75rem">Surgery options for high-risk BCC…</td>
+          <td><span class="badge" style="background:#f4a261">medium</span></td>
+          <td style="font-size:0.72rem;color:#999">TREATMENT</td>
+          <td class="num">83.0%</td>
+          <td class="num">83.0%</td>
+          <td class="num">17.0%</td>
+          <td class="num">0.0%</td>
+          <td class="num">63.0%</td>
+          <td class="num">75.0%</td>
+          <td class="num">1</td>
+          <td><span class="badge" style="background:#2a9d5c;font-size:0.65rem">HIGH</span></td>
+        </tr>
+        <tr>
+          <td class="num">8</td>
+          <td style="font-size:0.75rem">When is Mohs preferred over excision…</td>
+          <td><span class="badge" style="background:#f4a261">medium</span></td>
+          <td style="font-size:0.72rem;color:#999">TREATMENT</td>
+          <td class="num">80.0%</td>
+          <td class="num">80.0%</td>
+          <td class="num">30.0%</td>
+          <td class="num">10.0%</td>
+          <td class="num">57.0%</td>
+          <td class="num">71.0%</td>
+          <td class="num">1</td>
+          <td><span class="badge" style="background:#f4a261;font-size:0.65rem">MEDIUM</span></td>
+        </tr>
+        <tr>
+          <td class="num">9</td>
+          <td style="font-size:0.75rem">Non-surgical treatment options for BCC…</td>
+          <td><span class="badge" style="background:#f4a261">medium</span></td>
+          <td style="font-size:0.72rem;color:#999">TREATMENT</td>
+          <td class="num">78.0%</td>
+          <td class="num">78.0%</td>
+          <td class="num">22.0%</td>
+          <td class="num">11.0%</td>
+          <td class="num">57.0%</td>
+          <td class="num">71.0%</td>
+          <td class="num">1</td>
+          <td><span class="badge" style="background:#f4a261;font-size:0.65rem">MEDIUM</span></td>
+        </tr>
+        <tr>
+          <td class="num">10</td>
+          <td style="font-size:0.75rem">Systemic therapies for advanced/metastatic BCC…</td>
+          <td><span class="badge" style="background:#e05c5c">hard</span></td>
+          <td style="font-size:0.72rem;color:#999">SYSTEMIC</td>
+          <td class="num">80.0%</td>
+          <td class="num">80.0%</td>
+          <td class="num">20.0%</td>
+          <td class="num">10.0%</td>
+          <td class="num">63.0%</td>
+          <td class="num">75.0%</td>
+          <td class="num">1</td>
+          <td><span class="badge" style="background:#f4a261;font-size:0.65rem">MEDIUM</span></td>
+        </tr>
+        <tr>
+          <td class="num">11</td>
+          <td style="font-size:0.75rem">Treatment for superficial BCC on trunk…</td>
+          <td><span class="badge" style="background:#f4a261">medium</span></td>
+          <td style="font-size:0.72rem;color:#999">TREATMENT</td>
+          <td class="num">83.0%</td>
+          <td class="num">83.0%</td>
+          <td class="num">17.0%</td>
+          <td class="num">0.0%</td>
+          <td class="num">71.0%</td>
+          <td class="num">71.0%</td>
+          <td class="num">0</td>
+          <td><span class="badge" style="background:#2a9d5c;font-size:0.65rem">HIGH</span></td>
+        </tr>
+        <tr>
+          <td class="num">12</td>
+          <td style="font-size:0.75rem">BCC near eye or nose treatment…</td>
+          <td><span class="badge" style="background:#e05c5c">hard</span></td>
+          <td style="font-size:0.72rem;color:#999">TREATMENT</td>
+          <td class="num">75.0%</td>
+          <td class="num">75.0%</td>
+          <td class="num">25.0%</td>
+          <td class="num">13.0%</td>
+          <td class="num">50.0%</td>
+          <td class="num">63.0%</td>
+          <td class="num">1</td>
+          <td><span class="badge" style="background:#f4a261;font-size:0.65rem">MEDIUM</span></td>
+        </tr>
+        <tr>
+          <td class="num">13</td>
+          <td style="font-size:0.75rem">Vismodegib indications for BCC…</td>
+          <td><span class="badge" style="background:#e05c5c">hard</span></td>
+          <td style="font-size:0.72rem;color:#999">SYSTEMIC</td>
+          <td class="num">80.0%</td>
+          <td class="num">80.0%</td>
+          <td class="num">20.0%</td>
+          <td class="num">10.0%</td>
+          <td class="num">57.0%</td>
+          <td class="num">71.0%</td>
+          <td class="num">0</td>
+          <td><span class="badge" style="background:#f4a261;font-size:0.65rem">MEDIUM</span></td>
+        </tr>
+        <tr>
+          <td class="num">14</td>
+          <td style="font-size:0.75rem">Immunotherapy after hedgehog inhibitor progression…</td>
+          <td><span class="badge" style="background:#e05c5c">hard</span></td>
+          <td style="font-size:0.72rem;color:#999">SYSTEMIC</td>
+          <td class="num">75.0%</td>
+          <td class="num">75.0%</td>
+          <td class="num">25.0%</td>
+          <td class="num">13.0%</td>
+          <td class="num">57.0%</td>
+          <td class="num">71.0%</td>
+          <td class="num">1</td>
+          <td><span class="badge" style="background:#e05c5c;font-size:0.65rem">LOW</span></td>
+        </tr>
+        <tr>
+          <td class="num">15</td>
+          <td style="font-size:0.75rem">Follow-up schedule after BCC treatment…</td>
+          <td><span class="badge" style="background:#f4a261">medium</span></td>
+          <td style="font-size:0.72rem;color:#999">FOLLOW_UP</td>
+          <td class="num">83.0%</td>
+          <td class="num">83.0%</td>
+          <td class="num">17.0%</td>
+          <td class="num">0.0%</td>
+          <td class="num">71.0%</td>
+          <td class="num">71.0%</td>
+          <td class="num">0</td>
+          <td><span class="badge" style="background:#2a9d5c;font-size:0.65rem">HIGH</span></td>
+        </tr>
+        <tr>
+          <td class="num">16</td>
+          <td style="font-size:0.75rem">Patient education after BCC treatment…</td>
+          <td><span class="badge" style="background:#2a9d5c">easy</span></td>
+          <td style="font-size:0.72rem;color:#999">FOLLOW_UP</td>
+          <td class="num">88.0%</td>
+          <td class="num">88.0%</td>
+          <td class="num">13.0%</td>
+          <td class="num">0.0%</td>
+          <td class="num">80.0%</td>
+          <td class="num">80.0%</td>
+          <td class="num">0</td>
+          <td><span class="badge" style="background:#2a9d5c;font-size:0.65rem">HIGH</span></td>
+        </tr>
+        <tr>
+          <td class="num">17</td>
+          <td style="font-size:0.75rem">BCC vs SCC metastatic risk…</td>
+          <td><span class="badge" style="background:#e05c5c">hard</span></td>
+          <td style="font-size:0.72rem;color:#999">COMPARISON</td>
+          <td class="num">80.0%</td>
+          <td class="num">80.0%</td>
+          <td class="num">20.0%</td>
+          <td class="num">10.0%</td>
+          <td class="num">40.0%</td>
+          <td class="num">60.0%</td>
+          <td class="num">1</td>
+          <td><span class="badge" style="background:#f4a261;font-size:0.65rem">MEDIUM</span></td>
+        </tr>
+        <tr>
+          <td class="num">18</td>
+          <td style="font-size:0.75rem">Recurrent vs primary BCC treatment…</td>
+          <td><span class="badge" style="background:#e05c5c">hard</span></td>
+          <td style="font-size:0.72rem;color:#999">TREATMENT</td>
+          <td class="num">80.0%</td>
+          <td class="num">80.0%</td>
+          <td class="num">20.0%</td>
+          <td class="num">10.0%</td>
+          <td class="num">50.0%</td>
+          <td class="num">67.0%</td>
+          <td class="num">0</td>
+          <td><span class="badge" style="background:#f4a261;font-size:0.65rem">MEDIUM</span></td>
+        </tr>
+        <tr>
+          <td class="num">19</td>
+          <td style="font-size:0.75rem">Role of radiation therapy in BCC…</td>
+          <td><span class="badge" style="background:#f4a261">medium</span></td>
+          <td style="font-size:0.72rem;color:#999">TREATMENT</td>
+          <td class="num">83.0%</td>
+          <td class="num">83.0%</td>
+          <td class="num">14.0%</td>
+          <td class="num">0.0%</td>
+          <td class="num">71.0%</td>
+          <td class="num">71.0%</td>
+          <td class="num">0</td>
+          <td><span class="badge" style="background:#2a9d5c;font-size:0.65rem">HIGH</span></td>
+        </tr>
+        <tr>
+          <td class="num">20</td>
+          <td style="font-size:0.75rem">NCCN surgical margins for BCC excision…</td>
+          <td><span class="badge" style="background:#f4a261">medium</span></td>
+          <td style="font-size:0.72rem;color:#999">TREATMENT</td>
+          <td class="num">80.0%</td>
+          <td class="num">80.0%</td>
+          <td class="num">20.0%</td>
+          <td class="num">0.0%</td>
+          <td class="num">63.0%</td>
+          <td class="num">75.0%</td>
+          <td class="num">1</td>
+          <td><span class="badge" style="background:#2a9d5c;font-size:0.65rem">HIGH</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <p style="margin-top:12px;font-size:0.75rem;color:var(--muted)">
+    −V = without verifier &nbsp;|&nbsp; +V = with verifier &nbsp;|&nbsp;
+    Cit% = citation accuracy &nbsp;|&nbsp; Unsup = unsupported claim rate &nbsp;|&nbsp;
+    Concept = expected concept hit rate &nbsp;|&nbsp; Regen = regeneration count
+  </p>
+</section>
+
+
+<!-- ── METHODOLOGY ────────────────────────────────────────────── -->
+<section>
+  <h2>Methodology</h2>
+  <div class="method-grid">
+    <div class="method-box">
+      <h4>Dataset Design</h4>
+      <ul>
+        <li><strong>20 questions</strong> hand-crafted from NCCN BCC guidelines</li>
+        <li>5 categories: Diagnosis, Treatment, Systemic, Follow-up, Comparison</li>
+        <li>3 difficulty levels: easy (6), medium (9), hard (5)</li>
+        <li>Each question has expected concepts and expected citation chapters</li>
+        <li>Covers BCC lifecycle: diagnosis → treatment → systemic → surveillance</li>
+      </ul>
+    </div>
+    <div class="method-box">
+      <h4>Pipeline Variants</h4>
+      <ul>
+        <li><strong>With Verifier:</strong> Full 9-node LangGraph pipeline including VerifierAgent</li>
+        <li><strong>Without Verifier:</strong> Same pipeline with verifier replaced by a passthrough node</li>
+        <li>Both variants share identical retrieval, JSON extraction, and citation validation layers</li>
+        <li>Self-consistency agent runs in both variants</li>
+      </ul>
+    </div>
+    <div class="method-box">
+      <h4>Metrics Definitions</h4>
+      <ul>
+        <li><strong>Citation Accuracy:</strong> valid_claims ÷ total_claims (from citation validator)</li>
+        <li><strong>Unsupported Claim Rate:</strong> claims flagged by verifier ÷ total claims</li>
+        <li><strong>Concept Hit Rate:</strong> expected concepts found in answer ÷ total expected</li>
+        <li><strong>Regeneration Rate:</strong> questions triggering ≥1 citation retry ÷ total questions</li>
+      </ul>
+    </div>
+    <div class="method-box">
+      <h4>Limitations</h4>
+      <ul>
+        <li>Results depend on which NCCN PDFs are ingested — chapter names must match</li>
+        <li>Concept hit rate is lexical (keyword matching), not semantic</li>
+        <li>Citation accuracy uses fuzzy string matching (threshold 0.35) — may over- or under-count</li>
+        <li>20 questions is a small sample; real evaluation needs 100+ for statistical significance</li>
+        <li>No human annotator ground truth — metrics are system-level proxies</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+
+<!-- ── FOOTER ─────────────────────────────────────────────────── -->
+<footer>
+  <span>Medical Research Assistant — NCCN RAG Evaluation v1.0</span>
+  <span>LangGraph · Groq · FAISS · SentenceTransformers · LangSmith</span>
+</footer>
+
+</body>
+</html>
