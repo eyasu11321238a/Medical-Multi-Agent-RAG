@@ -131,6 +131,78 @@ RAG Layer:
 | **Evaluation** | Custom 20-question NCCN dataset | Reproducible metrics: citation accuracy, hallucination rate, concept coverage |
 
 ---
+##  LangSmith — Observability & Tracing
+
+### Why we use it
+
+Multi-agent pipelines are notoriously hard to debug. When a response is wrong or slow, you need to know *which node failed*, *what the LLM was given as input*, *how many retries happened*, and *where the latency came from*. Without observability, you are debugging blind — reading console logs and guessing.
+
+LangSmith solves this by capturing every step of the pipeline as a structured, searchable trace in a web UI. It is the difference between `print()` debugging and a proper monitoring dashboard.
+
+### What it traces in this project
+
+Every query through the pipeline creates a full **trace tree** in LangSmith:
+
+```
+medical_research_pipeline              ← top-level run (full query)
+  └── supervisor                       ← intent: treatment | cancer: BCC
+  └── treatment                        ← LangGraph node
+        └── treatment_agent            ← agent .run() call
+              └── force_json_response  ← LLM call (model, prompt, response)
+              └── force_json_response  ← retry attempt 2 (if first failed)
+              └── citation_validation  ← 3/5 claims valid (60%)
+  └── citation_validator               ← pass/fail + regen decision
+  └── merger                           ← combines sections
+  └── self_consistency                 ← score: 87/100
+  └── verifier                         ← HIGH confidence | 0 unsupported
+  └── finalizer                        ← final assembly
+```
+
+Each span records:
+- **Inputs** — the exact prompt and state sent to the LLM
+- **Outputs** — the raw LLM response and parsed result
+- **Metadata** — query, cancer type, claims extracted, citation pass rate, model name
+- **Latency** — time taken per node, automatically measured
+- **Tags** — `["medical-rag", "nccn", "treatment", "intent:treatment"]` for filtering
+
+### How it is implemented
+
+Tracing is implemented in `src/utils/tracing.py` using four custom decorators that wrap each layer of the pipeline:
+
+| Decorator | Applied to | What it captures |
+|-----------|------------|-----------------|
+| `@trace_graph_run` | `run_graph()` | Entire pipeline — top-level span |
+| `@trace_node("name")` | All 9 LangGraph nodes | Node input state, output changes, errors |
+| `@trace_agent("name")` | All 3 agent `.run()` methods | Claims extracted, validation pass rate |
+| `@trace_llm_call(...)` | `force_json_response()` | Model, prompt length, response, retry number |
+| `@trace_citation_validation` | `validate_claims()` | Claims checked, chunks searched, valid/invalid counts |
+
+This means **zero changes** are needed to the core pipeline code to enable tracing — the decorators handle everything transparently. If LangSmith is not configured, they are no-ops.
+
+### How to enable it
+
+**Option A — via `.env`:**
+```env
+LANGCHAIN_API_KEY=ls__your_key_here
+LANGCHAIN_TRACING_V2=true
+LANGCHAIN_PROJECT=medical-research-assistant
+LANGCHAIN_ENDPOINT=https://api.smith.langchain.com
+```
+
+**Option B — via the Streamlit sidebar at runtime:**
+Enter your API key in the **🔭 LangSmith Tracing** panel and click **Enable Tracing** — no restart needed.
+
+Get a free API key at [smith.langchain.com](https://smith.langchain.com).
+
+### What you can do with the traces
+
+- **Debug slow queries** — see exactly which node took the most time
+- **Inspect failed citations** — read the exact quote the LLM generated vs. what was in the chunk
+- **Count retries** — see how many `force_json_response` attempts each question needed
+- **Compare runs** — filter by tag (`intent:treatment`) and compare latency across sessions
+- **Monitor in production** — set up alerts if error rate or latency exceeds a threshold
+
+---
 
 ##  Project Structure
 
@@ -342,7 +414,7 @@ These are real engineering challenges encountered during development. They are d
 The evaluation dataset uses exact clinical keywords (`Mohs surgery`, `H-zone`, `vismodegib`, `perineural invasion`). The LLM frequently paraphrases these terms rather than reproducing them verbatim, so keyword matching underscores answer quality. A semantic similarity scorer (e.g. cosine similarity between embeddings) would be more accurate than lexical matching. This is a known limitation of string-based evaluation.
 
 **2. 100% regeneration rate**
-Every question triggered the citation validation retry loop. The root cause is that the LLM — even when prompted explicitly — often places content in the `summary` field of the JSON response rather than populating the structured claim arrays. When claim arrays are empty, the citation validator finds nothing to verify and triggers a retry. This is an LLM instruction-following limitation that worsens with smaller models.
+Every question triggered the citation validation retry loop. The root cause is that the LLM, even when prompted explicitly, often places content in the `summary` field of the JSON response rather than populating the structured claim arrays. When claim arrays are empty, the citation validator finds nothing to verify and triggers a retry. This is an LLM instruction following limitation that worsens with smaller models.
 
 **3. Latency (~130–180 seconds per question)**
 Each question makes 6–10 sequential LLM calls: the specialist agent (1–2 calls with retries), self-consistency agent (3 calls: answer A, answer B, arbiter), verifier agent (1 call), and finalizer. On Groq's free tier, each call takes 2–5 seconds but the sequential nature of the graph means they stack. The regeneration loop adds another 1–2 agent calls per question. Practical mitigation: disable self-consistency for production use; it adds ~30–40s with moderate quality benefit.
@@ -351,7 +423,7 @@ Each question makes 6–10 sequential LLM calls: the specialist agent (1–2 cal
 The citation validator uses Python's `SequenceMatcher` with a 0.35 similarity threshold to verify that a quoted string exists in the retrieved chunks. This approach struggles when the LLM rephrases or truncates the source text, even slightly. A more robust approach would use embedding similarity between the quote and chunk content, or exact substring search after normalising whitespace.
 
 **5. Single PDF limitation**
-With only one source PDF, the system has limited coverage. Questions that span multiple topics (e.g. "compare Mohs vs. excision margins") may retrieve the same chunks repeatedly, reducing answer diversity. The system is designed to scale — adding more NCCN PDFs directly improves retrieval quality without any code changes.
+With only one source PDF, the system has limited coverage. Questions that span multiple topics (e.g. "compare Mohs vs. excision margins") may retrieve the same chunks repeatedly, reducing answer diversity. The system is designed to scale, adding more NCCN PDFs directly improves retrieval quality without any code changes.
 
 **6. Evaluation dataset / PDF mismatch**
 The 20-question dataset was designed for NCCN BCC guidelines specifically. When run against non-BCC PDFs, expected concepts and citation chapters don't match, inflating failure metrics. Always align your PDF collection with the evaluation questions, or extend the dataset to cover the cancer types you have indexed.
