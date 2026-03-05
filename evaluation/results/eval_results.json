@@ -1,0 +1,319 @@
+{
+  "with_verifier": [
+    {
+      "question_id": 1,
+      "question": "What are the main signs and symptoms of basal cell carcinoma (BCC)?",
+      "variant": "with_verifier",
+      "citation_accuracy": 0.0,
+      "total_claims": 0,
+      "valid_claims": 0,
+      "unsupported_count": 3,
+      "unsupported_rate": 3.0,
+      "regeneration_count": 2,
+      "verification_conf": "MEDIUM",
+      "concept_hit_rate": 0.0,
+      "concepts_found": [],
+      "concepts_missing": [
+        "pearly",
+        "waxy",
+        "rolled border",
+        "telangiectasia",
+        "ulceration",
+        "nodular",
+        "pigmented",
+        "sclerosing"
+      ],
+      "answer_length": 551,
+      "latency_s": 125.06,
+      "error": null
+    },
+    {
+      "question_id": 2,
+      "question": "What risk factors increase the likelihood of developing basal cell carcinoma?",
+      "variant": "with_verifier",
+      "citation_accuracy": 0.0,
+      "total_claims": 0,
+      "valid_claims": 0,
+      "unsupported_count": 1,
+      "unsupported_rate": 1.0,
+      "regeneration_count": 2,
+      "verification_conf": "MEDIUM",
+      "concept_hit_rate": 0.0,
+      "concepts_found": [],
+      "concepts_missing": [
+        "UV exposure",
+        "sun exposure",
+        "fair skin",
+        "immunosuppression",
+        "radiation therapy history",
+        "arsenic",
+        "Gorlin syndrome"
+      ],
+      "answer_length": 551,
+      "latency_s": 170.44,
+      "error": null
+    },
+    {
+      "question_id": 3,
+      "question": "How is basal cell carcinoma staged or risk-classified according to NCCN guidelin",
+      "variant": "with_verifier",
+      "citation_accuracy": 1.0,
+      "total_claims": 4,
+      "valid_claims": 4,
+      "unsupported_count": 0,
+      "unsupported_rate": 0.0,
+      "regeneration_count": 2,
+      "verification_conf": "HIGH",
+      "concept_hit_rate": 0.0,
+      "concepts_found": [],
+      "concepts_missing": [
+        "low risk",
+        "high risk",
+        "location",
+        "size",
+        "perineural invasion",
+        "poorly defined borders",
+        "recurrent",
+        "immunosuppressed"
+      ],
+      "answer_length": 1767,
+      "latency_s": 113.77,
+      "error": null
+    },
+    {
+      "question_id": 4,
+      "question": "What are the clinical features that distinguish high-risk from low-risk BCC?",
+      "variant": "with_verifier",
+      "citation_accuracy": 0.0,
+      "total_claims": 0,
+      "valid_claims": 0,
+      "unsupported_count": 1,
+      "unsupported_rate": 1.0,
+      "regeneration_count": 2,
+      "verification_conf": "MEDIUM",
+      "concept_hit_rate": 0.0,
+      "concepts_found": [],
+      "concepts_missing": [
+        "location H-zone",
+        "size >2cm",
+        "poorly defined borders",
+        "perineural invasion",
+        "recurrence",
+        "aggressive histology"
+      ],
+      "answer_length": 551,
+      "latency_s": 189.34,
+      "error": null
+    },
+    {
+      "question_id": 5,
+      "question": "What diagnostic workup is recommended for suspected basal cell carcinoma?",
+      "variant": "with_verifier",
+      "citation_accuracy": 0.833,
+      "total_claims": 6,
+      "valid_claims": 5,
+      "unsupported_count": 0,
+      "unsupported_rate": 0.0,
+      "regeneration_count": 2,
+      "verification_conf": "HIGH",
+      "concept_hit_rate": 0.167,
+      "concepts_found": [
+        "biopsy"
+      ],
+      "concepts_missing": [
+        "shave biopsy",
+        "punch biopsy",
+        "histopathology",
+        "dermoscopy",
+        "pathological confirmation"
+      ],
+      "answer_length": 2364,
+      "latency_s": 125.39,
+      "error": null
+    }
+  ],
+  "without_verifier": [
+    {
+      "question_id": 1,
+      "question": "What are the main signs and symptoms of basal cell carcinoma (BCC)?",
+      "variant": "without_verifier",
+      "citation_accuracy": 0.0,
+      "total_claims": 0,
+      "valid_claims": 0,
+      "unsupported_count": 0,
+      "unsupported_rate": 0.0,
+      "regeneration_count": 2,
+      "verification_conf": "SKIPPED",
+      "concept_hit_rate": 0.0,
+      "concepts_found": [],
+      "concepts_missing": [
+        "pearly",
+        "waxy",
+        "rolled border",
+        "telangiectasia",
+        "ulceration",
+        "nodular",
+        "pigmented",
+        "sclerosing"
+      ],
+      "answer_length": 502,
+      "latency_s": 146.78,
+      "error": null
+    },
+    {
+      "question_id": 2,
+      "question": "What risk factors increase the likelihood of developing basal cell carcinoma?",
+      "variant": "without_verifier",
+      "citation_accuracy": 0.0,
+      "total_claims": 0,
+      "valid_claims": 0,
+      "unsupported_count": 0,
+      "unsupported_rate": 0.0,
+      "regeneration_count": 2,
+      "verification_conf": "SKIPPED",
+      "concept_hit_rate": 0.0,
+      "concepts_found": [],
+      "concepts_missing": [
+        "UV exposure",
+        "sun exposure",
+        "fair skin",
+        "immunosuppression",
+        "radiation therapy history",
+        "arsenic",
+        "Gorlin syndrome"
+      ],
+      "answer_length": 502,
+      "latency_s": 151.45,
+      "error": null
+    },
+    {
+      "question_id": 3,
+      "question": "How is basal cell carcinoma staged or risk-classified according to NCCN guidelin",
+      "variant": "without_verifier",
+      "citation_accuracy": 1.0,
+      "total_claims": 4,
+      "valid_claims": 4,
+      "unsupported_count": 0,
+      "unsupported_rate": 0.0,
+      "regeneration_count": 2,
+      "verification_conf": "SKIPPED",
+      "concept_hit_rate": 0.0,
+      "concepts_found": [],
+      "concepts_missing": [
+        "low risk",
+        "high risk",
+        "location",
+        "size",
+        "perineural invasion",
+        "poorly defined borders",
+        "recurrent",
+        "immunosuppressed"
+      ],
+      "answer_length": 1770,
+      "latency_s": 95.75,
+      "error": null
+    },
+    {
+      "question_id": 4,
+      "question": "What are the clinical features that distinguish high-risk from low-risk BCC?",
+      "variant": "without_verifier",
+      "citation_accuracy": 0.0,
+      "total_claims": 0,
+      "valid_claims": 0,
+      "unsupported_count": 0,
+      "unsupported_rate": 0.0,
+      "regeneration_count": 2,
+      "verification_conf": "SKIPPED",
+      "concept_hit_rate": 0.0,
+      "concepts_found": [],
+      "concepts_missing": [
+        "location H-zone",
+        "size >2cm",
+        "poorly defined borders",
+        "perineural invasion",
+        "recurrence",
+        "aggressive histology"
+      ],
+      "answer_length": 502,
+      "latency_s": 143.25,
+      "error": null
+    },
+    {
+      "question_id": 5,
+      "question": "What diagnostic workup is recommended for suspected basal cell carcinoma?",
+      "variant": "without_verifier",
+      "citation_accuracy": 0.833,
+      "total_claims": 6,
+      "valid_claims": 5,
+      "unsupported_count": 0,
+      "unsupported_rate": 0.0,
+      "regeneration_count": 2,
+      "verification_conf": "SKIPPED",
+      "concept_hit_rate": 0.167,
+      "concepts_found": [
+        "biopsy"
+      ],
+      "concepts_missing": [
+        "shave biopsy",
+        "punch biopsy",
+        "histopathology",
+        "dermoscopy",
+        "pathological confirmation"
+      ],
+      "answer_length": 2367,
+      "latency_s": 110.16,
+      "error": null
+    }
+  ],
+  "comparison": {
+    "with_verifier": {
+      "n_questions": 5,
+      "errors": 0,
+      "avg_citation_accuracy": 0.367,
+      "avg_concept_hit_rate": 0.033,
+      "avg_unsupported_rate": 1.0,
+      "avg_regeneration_count": 2.0,
+      "questions_with_regen": 5,
+      "regen_rate": 1.0,
+      "avg_latency_s": 144.8,
+      "avg_answer_length": 1156.8,
+      "avg_total_claims": 2.0,
+      "avg_valid_claims": 1.8,
+      "verification_conf_dist": {
+        "HIGH": 2,
+        "MEDIUM": 3,
+        "LOW": 0,
+        "UNKNOWN": 0,
+        "SKIPPED": 0
+      }
+    },
+    "without_verifier": {
+      "n_questions": 5,
+      "errors": 0,
+      "avg_citation_accuracy": 0.367,
+      "avg_concept_hit_rate": 0.033,
+      "avg_unsupported_rate": 0.0,
+      "avg_regeneration_count": 2.0,
+      "questions_with_regen": 5,
+      "regen_rate": 1.0,
+      "avg_latency_s": 129.478,
+      "avg_answer_length": 1128.6,
+      "avg_total_claims": 2.0,
+      "avg_valid_claims": 1.8,
+      "verification_conf_dist": {
+        "HIGH": 0,
+        "MEDIUM": 0,
+        "LOW": 0,
+        "UNKNOWN": 0,
+        "SKIPPED": 5
+      }
+    },
+    "delta": {
+      "citation_accuracy_delta": 0.0,
+      "concept_hit_rate_delta": 0.0,
+      "unsupported_rate_delta": 1.0,
+      "regeneration_rate_delta": 0.0,
+      "latency_delta_s": 15.322
+    }
+  }
+}

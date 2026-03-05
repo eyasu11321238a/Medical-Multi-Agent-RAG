@@ -19,7 +19,7 @@ load_dotenv()
 
 T = TypeVar("T", bound=BaseModel)
 
-MAX_PARSE_RETRIES = 2
+MAX_PARSE_RETRIES = 1
 
 # This prefix is injected into every agent system prompt
 JSON_ENFORCEMENT_PREFIX = """
